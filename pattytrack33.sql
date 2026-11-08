@@ -1,9 +1,7 @@
--- PattyTrack database for XAMPP (phpMyAdmin > Import)
--- Tables and fields follow the Preliminary Data Dictionary in the proposal.
--- Creates the database, tables and sample data. Safe to re-import: it resets everything.
+
 CREATE DATABASE IF NOT EXISTS pattytrack CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE pattytrack;
-SET time_zone = '+08:00'; -- sample times are relative to NOW(); keep them on Manila time like the app
+SET time_zone = '+08:00'; 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS activity_logs, stock_out, stock_in, purchase_order_items, purchase_orders, suppliers, products, categories, users;
 SET FOREIGN_KEY_CHECKS = 1;
@@ -31,7 +29,7 @@ CREATE TABLE products (
   reorder_level INT NOT NULL DEFAULT 0,
   current_stock INT NOT NULL DEFAULT 0,
   unit_cost DECIMAL(8,2) NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,           -- 0 = removed from use (history is kept)
+  is_active TINYINT(1) NOT NULL DEFAULT 1,         
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(category_id)
 ) ENGINE=InnoDB;
@@ -39,14 +37,13 @@ CREATE TABLE products (
 CREATE TABLE suppliers (
   supplier_id INT AUTO_INCREMENT PRIMARY KEY,
   supplier_name VARCHAR(100) NOT NULL,
-  category_id INT NOT NULL,                          -- what they mainly supply
+  category_id INT NOT NULL,                          
   contact_person VARCHAR(100) NOT NULL,
   contact_number VARCHAR(20) NOT NULL,
   FOREIGN KEY (category_id) REFERENCES categories(category_id)
 ) ENGINE=InnoDB;
 
--- status stays Pending / Delivered / Cancelled (as in the proposal).
--- A Pending order is "awaiting approval" until approved_by is filled in by the Admin.
+
 CREATE TABLE purchase_orders (
   po_id INT AUTO_INCREMENT PRIMARY KEY,
   supplier_id INT NOT NULL,
@@ -73,12 +70,12 @@ CREATE TABLE purchase_order_items (
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 ) ENGINE=InnoDB;
 
--- po_id is optional: a delivery does not have to come from a purchase order
+
 CREATE TABLE stock_in (
   stock_in_id INT AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
   quantity_received INT NOT NULL,
-  expiry_date DATE NULL,                             -- for reference only, no expiry alerts
+  expiry_date DATE NULL,                            
   supplier_id INT NULL,
   po_id INT NULL,
   user_id INT NOT NULL,
@@ -89,7 +86,7 @@ CREATE TABLE stock_in (
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
--- status 'pending' = a staff Correction waiting for a manager or admin to approve it
+
 CREATE TABLE stock_out (
   stock_out_id INT AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
@@ -111,8 +108,7 @@ CREATE TABLE activity_logs (
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
--- ---------- Sample data ----------
--- Demo logins: admin/admin123, manager/manager123, staff/staff123
+
 
 INSERT INTO users (user_id,full_name,username,password,role) VALUES
 (1,'Ramon Estrada','admin','$2y$10$JsGVgMFlg1xCsDjl1koU6ePPO7WPqpkuvH9/rQOxslZq5zxnhLndG','Admin'),

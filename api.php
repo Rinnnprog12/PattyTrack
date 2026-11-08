@@ -1,15 +1,4 @@
 <?php
-// Small JSON API for inventory items and transactions (test it with Postman).
-//   POST   api.php?resource=login          {"username":"..","password":".."}  -> returns a csrf token
-//   GET    api.php?resource=products       [&id=1] [&q=patty] [&category_id=1] [&low=1]
-//   POST   api.php?resource=products       {name, category_id, unit, reorder_level, unit_cost, stock}   (Admin, Manager)
-//   PUT    api.php?resource=products&id=1  {name, category_id, unit, reorder_level, unit_cost}          (Admin, Manager)
-//   DELETE api.php?resource=products&id=1  removes the product from use (history is kept)               (Admin, Manager)
-//   GET    api.php?resource=stock_in       latest deliveries                                            (Admin, Manager)
-//   POST   api.php?resource=stock_in       {product_id, quantity, date?, expiry_date?, supplier_id?}   (Admin, Manager)
-//   GET    api.php?resource=stock_out      latest usage
-//   POST   api.php?resource=stock_out      {product_id, quantity, reason, note?}                        (everyone)
-// After login, send the token in the X-CSRF-Token header on every POST / PUT / DELETE.
 require_once 'process.php';
 header('Content-Type: application/json; charset=utf-8');
 
@@ -44,7 +33,7 @@ if ($method !== 'GET' && !hash_equals($_SESSION['csrf'], (string)($_SERVER['HTTP
 }
 
 try {
-    /* ----- products ----- */
+  
     if ($resource === 'products') {
         if ($method === 'GET') {
             if ($id) {
@@ -71,7 +60,7 @@ try {
         }
     }
 
-    /* ----- stock-in ----- */
+    
     if ($resource === 'stock_in') {
         need('Admin', 'Manager');
         if ($method === 'GET') {
@@ -84,7 +73,7 @@ try {
         }
     }
 
-    /* ----- stock-out ----- */
+    
     if ($resource === 'stock_out') {
         if ($method === 'GET') {
             out($pdo->query("SELECT o.stock_out_id id, o.product_id, p.product_name product, o.quantity_used quantity, o.reason, o.note, o.status, o.used_at

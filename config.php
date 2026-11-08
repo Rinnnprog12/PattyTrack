@@ -1,5 +1,5 @@
 <?php
-// Database connection (XAMPP defaults). Change these if your MySQL is different.
+
 $host   = 'localhost';
 $dbname = 'pattytrack';
 $dbuser = 'root';
@@ -12,7 +12,7 @@ try {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
-    $pdo->exec("SET time_zone = '+08:00'"); // keep MySQL and PHP on the same clock
+    $pdo->exec("SET time_zone = '+08:00'"); 
 } catch (PDOException $e) {
     http_response_code(500);
     exit('Database connection failed. Start MySQL in XAMPP, import pattytrack.sql, then check config.php.');

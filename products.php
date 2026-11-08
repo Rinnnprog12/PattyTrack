@@ -3,7 +3,6 @@ require_once 'layout.php';
 requireRole('Admin', 'Manager', 'Staff');
 $canEdit = in_array(currentRole(), ['Admin', 'Manager'], true);
 
-// Search, filter and sort come from the URL so the page works without JavaScript
 $q      = trim($_GET['q'] ?? '');
 $cat    = (int)($_GET['cat'] ?? 0);
 $status = $_GET['status'] ?? 'all';

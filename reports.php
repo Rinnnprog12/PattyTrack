@@ -2,7 +2,6 @@
 require_once 'layout.php';
 requireRole('Admin', 'Manager');
 
-// Date range: last 7 days (default), last 30 days, or custom from/to
 $range = $_GET['range'] ?? '7';
 $today = date('Y-m-d');
 if ($range === 'custom') {
@@ -18,7 +17,6 @@ if ($range === 'custom') {
     $from = date('Y-m-d', strtotime("-" . ($range - 1) . " days"));
 }
 
-// Value = quantity x the product's current unit cost, approved entries only
 $span = [$from, $to];
 $one = function (string $sql) use ($pdo, $span) { $s = $pdo->prepare($sql); $s->execute($span); return (float)$s->fetchColumn(); };
 $inRange  = "received_at >= ? AND received_at < DATE_ADD(?, INTERVAL 1 DAY)";
@@ -44,7 +42,6 @@ $catTotal = array_sum(array_column($byCat, 'v'));
 $series = dailySeries($from, $to);
 $low = lowProducts();
 
-// Stock movements in the period (deliveries and approved usage), newest first
 $mv = $pdo->prepare("(SELECT s.received_at ts, 'in' type, p.product_name name, p.unit_of_measure unit, s.quantity_received qty, '' reason, u.full_name who
                       FROM stock_in s JOIN products p ON p.product_id = s.product_id JOIN users u ON u.user_id = s.user_id WHERE s.$inRange)
                      UNION ALL

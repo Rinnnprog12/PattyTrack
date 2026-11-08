@@ -5,7 +5,7 @@ requireRole('Admin', 'Manager');
 $products  = $pdo->query(productSql('p.is_active = 1', 'c.category_name, p.product_name'))->fetchAll();
 $suppliers = $pdo->query('SELECT s.*, c.category_name FROM suppliers s JOIN categories c ON c.category_id = s.category_id ORDER BY s.supplier_name')->fetchAll();
 
-// "Create order" from the alerts page pre-fills the product, quantity and matching supplier
+
 $preProduct = (int)($_GET['product'] ?? 0);
 $preQty     = (int)($_GET['qty'] ?? 0);
 $preSupplier = 0;

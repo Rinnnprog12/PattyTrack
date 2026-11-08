@@ -25,7 +25,6 @@ $counts = ['all' => $pdo->query('SELECT COUNT(*) FROM purchase_orders')->fetchCo
            'Delivered' => $pdo->query("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Delivered'")->fetchColumn(),
            'Cancelled' => $pdo->query("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Cancelled'")->fetchColumn()];
 
-// The order whose lines are shown below the list (?id=, otherwise the first in the list)
 $selId = (int)($_GET['id'] ?? ($orders[0]['po_id'] ?? 0));
 $sel = null;
 foreach ($orders as $o) if ($o['po_id'] == $selId) $sel = $o;

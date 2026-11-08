@@ -1,5 +1,5 @@
 <?php
-// All logic lives here: helpers, shared business rules, then one block per form action.
+
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
     session_start();
@@ -12,12 +12,10 @@ const REASONS = ['Sale' => 'Used to make customer orders',
                  'Waste' => 'Dropped, burnt or made by mistake',
                  'Correction' => 'Fix a count that does not match (staff entries need approval)'];
 
-// Thrown by the business rules below when input is not allowed (forms show it, the API returns 422)
+
 class InventoryException extends Exception {}
 
-/* ---------------- helpers ---------------- */
-// Logged in = session keys exist AND the account is still active. The role is re-read from the database on
-// every request, so a deactivated user is kicked out and a role change takes effect immediately.
+
 function isLoggedIn(): bool {
     static $valid = null;
     if (empty($_SESSION['user_id']) || empty($_SESSION['username']) || empty($_SESSION['role'])) return false;
@@ -51,7 +49,7 @@ function peso($n, int $d = 2): string { return '₱' . number_format((float)$n, 
 function poCode($id): string { return 'PO-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT); }
 function validDate(string $d): bool { $x = DateTime::createFromFormat('Y-m-d', $d); return $x && $x->format('Y-m-d') === $d; }
 
-// CSRF: every form carries a secret token; a POST without it is refused
+
 function csrfField(): string { return '<input type="hidden" name="csrf" value="' . e($_SESSION['csrf']) . '">'; }
 function checkCsrf(?string $token): void {
     if (!hash_equals($_SESSION['csrf'], (string)$token)) {
@@ -60,7 +58,7 @@ function checkCsrf(?string $token): void {
     }
 }
 
-// flash message shown once at the top of the next page: type = ok | warn | err
+
 function flash(string $text, string $type = 'ok'): void { $_SESSION['flash'] = ['text' => $text, 'type' => $type]; }
 function done(string $url, string $text, string $type = 'ok'): void { flash($text, $type); redirect($url); }
 function logAct(string $text): void {
@@ -89,8 +87,7 @@ function logoutUser(): void {
     session_destroy();
 }
 
-/* ---------------- data helpers ---------------- */
-// Products with friendly column names: id, name, unit, stock, active, category ...
+
 function productSql(string $where = '1=1', string $order = 'p.product_name'): string {
     return "SELECT p.product_id id, p.product_name name, p.unit_of_measure unit, p.reorder_level, p.unit_cost,
                    p.current_stock stock, p.is_active active, p.updated_at, p.category_id, c.category_name category
@@ -106,14 +103,14 @@ function categoryList(): array {
     global $pdo;
     return $pdo->query('SELECT category_id, category_name FROM categories ORDER BY category_name')->fetchAll();
 }
-// "Low" = active product at or below its reorder level
+
 function isLow(array $p): bool { return $p['active'] && $p['stock'] <= $p['reorder_level']; }
 function lowProducts(): array {
     global $pdo;
     return $pdo->query(productSql('p.is_active = 1 AND p.current_stock <= p.reorder_level',
                                   'p.current_stock / GREATEST(p.reorder_level, 1)'))->fetchAll();
 }
-// Open purchase-order lines for a product (to show "already on order")
+
 function onOrder(int $productId): array {
     global $pdo;
     $s = $pdo->prepare("SELECT po.po_id id, i.quantity_ordered quantity FROM purchase_order_items i
@@ -127,7 +124,7 @@ function lowWarning(int $productId): string {
     if (!$p || !isLow($p)) return '';
     return ' Warning: ' . $p['name'] . ($p['stock'] == 0 ? ' is out of stock.' : " is low ({$p['stock']} {$p['unit']} left, reorder at {$p['reorder_level']}).");
 }
-// Number of things waiting for someone to act (shown as badges in the menu)
+
 function awaitingPoCount(): int {
     global $pdo;
     return (int)$pdo->query("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Pending' AND approved_by IS NULL")->fetchColumn();
@@ -136,7 +133,7 @@ function pendingCorrectionCount(): int {
     global $pdo;
     return (int)$pdo->query("SELECT COUNT(*) FROM stock_out WHERE status = 'pending'")->fetchColumn();
 }
-// Value of stock-in / stock-out per day, for the bar charts
+
 function dailySeries(string $from, string $to): array {
     global $pdo;
     $sum = [];
@@ -159,8 +156,7 @@ function dailySeries(string $from, string $to): array {
     return $out;
 }
 
-/* ---------------- business rules (used by the forms AND the REST API) ---------------- */
-// Add ($id = 0) or update a product. Returns the product id.
+
 function saveProduct(array $in, int $id = 0): int {
     global $pdo;
     $name    = trim((string)($in['name'] ?? ''));
@@ -195,7 +191,7 @@ function saveProduct(array $in, int $id = 0): int {
     return $newId;
 }
 
-// Record a delivery and add it to the product's stock. Returns the product and its new stock.
+
 function recordStockIn(array $in): array {
     global $pdo;
     $product = getProduct((int)($in['product_id'] ?? 0));
@@ -225,7 +221,7 @@ function recordStockIn(array $in): array {
     return ['product' => $product, 'new_stock' => $product['stock']];
 }
 
-// Record usage / loss. A STAFF "Correction" is saved as pending until a manager or admin approves it.
+
 function recordStockOut(array $in): array {
     global $pdo;
     $product = getProduct((int)($in['product_id'] ?? 0));
@@ -254,12 +250,11 @@ function recordStockOut(array $in): array {
     return ['product' => $product, 'pending' => false, 'warning' => lowWarning($product['id'])];
 }
 
-/* ---------------- form actions (only when this file is the target of the form) ---------------- */
+
 if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     checkCsrf($_POST['csrf'] ?? '');
     $action = $_POST['action'];
 
-    /* ----- login / logout ----- */
     if ($action === 'login') {
         if (attemptLogin($_POST['username'] ?? '', $_POST['password'] ?? '')) redirect('dashboard.php');
         redirect('login.php?error=1');
@@ -269,7 +264,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         redirect('login.php');
     }
 
-    /* ----- products (Admin, Manager) ----- */
+  
     if ($action === 'add_product' || $action === 'update_product') {
         requireRole('Admin', 'Manager');
         $id = $action === 'update_product' ? (int)($_POST['id'] ?? 0) : 0;
@@ -289,7 +284,6 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done('products.php', $p['name'] . ($p['active'] ? ' is active again.' : ' was removed from use. Its history is kept.'));
     }
 
-    /* ----- categories (Admin, Manager) ----- */
     if ($action === 'add_category' || $action === 'rename_category') {
         requireRole('Admin', 'Manager');
         $id   = (int)($_POST['id'] ?? 0);
@@ -318,7 +312,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done('categories.php', 'Category deleted.');
     }
 
-    /* ----- stock-in (Admin, Manager) ----- */
+   
     if ($action === 'stock_in') {
         requireRole('Admin', 'Manager');
         try {
@@ -329,7 +323,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done('stock_in.php', "Recorded {$_POST['quantity']} {$r['product']['unit']} of {$r['product']['name']}. Stock is now {$r['new_stock']}.");
     }
 
-    /* ----- stock-out (everyone) ----- */
+    
     if ($action === 'stock_out') {
         requireRole('Admin', 'Manager', 'Staff');
         try {
@@ -368,7 +362,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done('stock_out.php', 'Correction approved.' . $warn, $warn ? 'warn' : 'ok');
     }
 
-    /* ----- suppliers (Admin, Manager) ----- */
+  
     if ($action === 'add_supplier' || $action === 'update_supplier') {
         requireRole('Admin', 'Manager');
         $id     = (int)($_POST['id'] ?? 0);
@@ -394,8 +388,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done('suppliers.php', "$name was updated.");
     }
 
-    /* ----- purchase orders ----- */
-    // Manager raises an order (it then waits for the Admin). An order the Admin raises is approved straight away.
+    
     if ($action === 'create_po') {
         requireRole('Admin', 'Manager');
         $sid  = (int)($_POST['supplier_id'] ?? 0);
@@ -406,7 +399,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         $supplierName = $s->fetchColumn();
         if ($supplierName === false || !validDate($eta)) done('po_form.php', 'Choose a supplier and an expected delivery date.', 'err');
 
-        // The form has several item rows; rows with no quantity are ignored
+        
         $items = [];
         foreach ($_POST['product_id'] ?? [] as $i => $pid) {
             $qty = trim($_POST['qty'][$i] ?? '');
@@ -456,7 +449,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done($ret, poCode($id) . ' was rejected and cancelled.');
     }
 
-    // Receiving an order marks it Delivered AND adds every line to stock. Only approved orders can be received.
+    
     if ($action === 'receive_po') {
         requireRole('Admin', 'Manager');
         $id = (int)($_POST['id'] ?? 0);
@@ -480,7 +473,6 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done("purchase_orders.php?id=$id", poCode($id) . ' was received. Stock has been updated.');
     }
 
-    // Admin can cancel any pending order; a Manager only before it has been approved
     if ($action === 'cancel_po') {
         requireRole('Admin', 'Manager');
         $id  = (int)($_POST['id'] ?? 0);
@@ -492,7 +484,6 @@ if (basename($_SERVER['SCRIPT_NAME']) === 'process.php' && $_SERVER['REQUEST_MET
         done("purchase_orders.php?id=$id", poCode($id) . ' was cancelled.');
     }
 
-    /* ----- users (Admin only: overall account control) ----- */
     if ($action === 'create_user') {
         requireRole('Admin');
         $name = trim($_POST['full_name'] ?? '');

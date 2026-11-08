@@ -11,7 +11,7 @@ $invValue  = $pdo->query('SELECT COALESCE(SUM(current_stock * unit_cost), 0) FRO
 $awaiting  = awaitingPoCount();
 $corrections = pendingCorrectionCount();
 
-// Open orders: awaiting approval first, then approved ones waiting for delivery
+
 $openPos = $pdo->query("SELECT po.*, s.supplier_name supplier,
                         (SELECT SUM(quantity_ordered * unit_price) FROM purchase_order_items WHERE po_id = po.po_id) total,
                         (SELECT COUNT(*) FROM purchase_order_items WHERE po_id = po.po_id) n

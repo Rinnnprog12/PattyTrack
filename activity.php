@@ -1,9 +1,8 @@
 <?php
 require_once 'layout.php';
 requireRole('Admin', 'Manager', 'Staff');
-$isManager = in_array(currentRole(), ['Admin', 'Manager'], true); // they see everyone; staff only see themselves
+$isManager = in_array(currentRole(), ['Admin', 'Manager'], true); 
 
-// Managers can filter by user; staff only ever see their own entries
 $userId = $isManager ? (int)($_GET['user'] ?? 0) : (int)$_SESSION['user_id'];
 $where  = $userId ? 'WHERE a.user_id = ?' : '';
 $args   = $userId ? [$userId] : [];

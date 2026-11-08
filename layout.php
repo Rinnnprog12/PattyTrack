@@ -1,5 +1,5 @@
 <?php
-// Shared page shell: sidebar, top bar, flash message. Pages call layoutTop() ... layoutBottom().
+
 require_once 'process.php';
 
 function icon(string $name): string {
